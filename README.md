@@ -98,13 +98,13 @@ Un NPA absent de ce fichier garde son nom postal d'origine.
 ## Provenance des données
 
 **Effectifs de membres et de liste d'attente** — export interne Calim
-(`Vis_detaillants_membres_attents.xlsx`). Date d'extraction : _à compléter_. Il n'existe
+(`Vis_detaillants_membres_attents.xlsx`). Date d'extraction : 13 juillet 2026. Il n'existe
 aucun mécanisme de mise à jour automatique ; toute actualisation passe par un nouvel export.
 
 **Lieux partenaires** — relevés à l'origine sur `calim-ge.ch/les-lieux-ou-depenser-vos-radis`.
 
 **Contours des NPA, du lac et des rivières** — SITG, couches `GEO_POSTE_PL`,
-`GEO_LAC_LEMAN` et `CAD_COMMUNE`. Date d'extraction : _à compléter_.
+`GEO_LAC_LEMAN` et `CAD_COMMUNE`. Date d'extraction : 13 juillet 2026
 
 Traitements appliqués aux données SITG : reprojection d'EPSG:2056 (CH1903+/LV95) vers
 EPSG:4326 (WGS84), union des polygones par NPA, calcul des centroïdes, simplification des

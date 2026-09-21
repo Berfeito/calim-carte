@@ -337,7 +337,7 @@ def ajouter_habillage(carte, lieux, avec_demande):
         {len(avec_demande)} NPA sur 60 portent de la demande.
       </div>
     </details>
-    <div class="habillage" id="source">Source : données Calim · contours SITG</div>
+        <div class="habillage" id="source">Données Calim · contours SITG, extraction 13.07.2026, reprojetés et simplifiés</div>
     """
     carte.get_root().html.add_child(folium.Element(html))
 
