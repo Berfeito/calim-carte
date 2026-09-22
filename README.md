@@ -47,9 +47,10 @@ Sous macOS ou Linux, l'activation s'écrit `source .venv/bin/activate` et les ch
 utilisent des barres obliques.
 
 Le script lit les fichiers de `geo/` et `data/`, puis réécrit `docs/index.html`. Il affiche
-en fin d'exécution quatre chiffres de contrôle — 23 points de vente, 39 NPA porteurs de
-demande sur 60, 392,5 membres et 351,5 personnes en attente. Un écart sur l'un de ces
-chiffres signale une altération des données d'entrée.
+en fin d'exécution quatre chiffres de contrôle : nombre de points de vente, nombre de NPA
+porteurs de demande, total des membres et total de la liste d'attente. Ces chiffres doivent
+correspondre à ceux qu'annonce le script d'import lors de la dernière mise à jour des
+données ; tout écart signale une altération en cours de route.
 
 ---
 
@@ -64,8 +65,9 @@ geo/
   npa.geojson              contours des 60 NPA du canton, en WGS84
   eau.geojson              lac Léman, Rhône, Arve
 src/
-  extraire_donnees.py      extraction unique depuis l'ancienne carte (voir Historique)
+  importer_export_calim.py conversion d'un export Calim vers demande_par_npa.csv
   construire_carte.py      construction de la carte — le script à relancer
+  extraire_donnees.py      extraction unique depuis l'ancienne carte (voir Historique)
 docs/
   index.html               la carte, publiée par GitHub Pages
 ```
@@ -82,29 +84,50 @@ modification y serait effacée à la reconstruction suivante.
 
 ## Mettre à jour les données
 
-1. Modifier le fichier concerné dans `data/` — directement sur github.com, avec le crayon,
-   ou localement dans un éditeur.
-2. Relancer `python src\construire_carte.py`.
-3. Vérifier les quatre chiffres de contrôle.
-4. `git add .`, `git commit -m "..."`, `git push`.
+**Nouvel export de membres et de liste d'attente.** L'export attendu est une ligne par
+foyer, avec les colonnes « Nombre de personnes de 14 ans ou plus dans le groupe »,
+« Nombre de personnes de moins de 14 ans dans le groupe », « Code postal » et
+« Étiquettes ».
 
-Le site se met à jour automatiquement dans la minute qui suit.
+```powershell
+python src\importer_export_calim.py chemin\vers\export.xlsx
+python src\construire_carte.py
+```
 
-Les appellations de quartiers se corrigent dans `data/noms_npa.csv`, sans toucher au code.
-Un NPA absent de ce fichier garde son nom postal d'origine.
+Le script d'import affiche un rapport avant d'écrire : étiquettes rencontrées et sort
+réservé à chacune, foyers retenus, et ce qui sort de la carte — foyers hors canton, hors de
+Suisse, sans code postal, ou déclarés à zéro personne. **Lire ce rapport fait partie de la
+mise à jour** : c'est le seul endroit où apparaît ce que la carte ne montre pas.
+
+Si l'export comporte une étiquette inconnue, elle sera ignorée et signalée comme telle dans
+le rapport. Les règles de lecture des étiquettes sont en tête de
+`src/importer_export_calim.py`.
+
+**Autre modification** — appellations de quartiers, lieux partenaires : éditer le fichier
+concerné dans `data/`, directement sur github.com avec le crayon ou localement, puis
+relancer `python src\construire_carte.py`.
+
+Dans les deux cas, terminer par `git add .`, `git commit -m "..."`, `git push`. Le site se
+met à jour automatiquement dans la minute qui suit.
+
+Un NPA absent de `data/noms_npa.csv` garde son nom postal d'origine.
 
 ---
 
 ## Provenance des données
 
 **Effectifs de membres et de liste d'attente** — export interne Calim
-(`Vis_detaillants_membres_attents.xlsx`). Date d'extraction : 13 juillet 2026. Il n'existe
-aucun mécanisme de mise à jour automatique ; toute actualisation passe par un nouvel export.
+(`2026.09.21stat_membres2.xlsx`), extraction du 21 septembre 2026, transmise par la
+coordination. Il n'existe aucun mécanisme de mise à jour automatique ; toute actualisation
+passe par un nouvel export et par `src/importer_export_calim.py`.
+
+Une personne équivalente vaut un adulte, ou deux enfants. L'export distingue les personnes
+de 14 ans ou plus de celles de moins de 14 ans.
 
 **Lieux partenaires** — relevés à l'origine sur `calim-ge.ch/les-lieux-ou-depenser-vos-radis`.
 
 **Contours des NPA, du lac et des rivières** — SITG, couches `GEO_POSTE_PL`,
-`GEO_LAC_LEMAN` et `CAD_COMMUNE`. Date d'extraction : 13 juillet 2026
+`GEO_LAC_LEMAN` et `CAD_COMMUNE`, extraction du 13 juillet 2026.
 
 Traitements appliqués aux données SITG : reprojection d'EPSG:2056 (CH1903+/LV95) vers
 EPSG:4326 (WGS84), union des polygones par NPA, calcul des centroïdes, simplification des
@@ -133,10 +156,19 @@ effectifs deviennent nominatifs.
 
 **Appellations de quartiers.** La Poste nomme « Genève » dix zones postales du centre, ce
 qui rendait dix bulles indistinguables au clic. `data/noms_npa.csv` leur attribue une
-appellation courante. Quatre de ces noms sont recoupés par les adresses des partenaires —
-Grottes en 1201, Rive en 1204, Plainpalais en 1205, Budé en 1209 — les six autres reposent
-sur l'usage. **Un code postal n'est pas un quartier** : les deux découpages ne coïncident
-pas. Ces noms sont des repères de lecture, pas des définitions.
+appellation courante. Les noms des NPA 1201 à 1209 ont été fournis par la coordination
+Calim le 22 septembre 2026 et font foi. Celui du 1215 reste une proposition.
+**Un code postal n'est pas un quartier** : les deux découpages ne coïncident pas. Ces noms
+sont des repères de lecture, pas des définitions.
+
+**Étiquettes comptées comme membres.** L'export ne porte pas de champ de statut : le statut
+se lit dans la colonne « Étiquettes ». Sont comptés comme membres « Participant Calim 2025 »
+et « Participant Calim 2026 » ; comme liste d'attente « En liste d'attente ». Les étiquettes
+de groupes locaux (Glo Jonx, Glo Meyrin, Glo Pâquis — 22 foyers, 10 personnes équivalentes),
+« Membre asso », « Résiliation Calim », « Calim ADMIN », « Coordination » et
+« Technique - ne pas supprimer » sont écartées. Une ligne ne portant qu'une étiquette, un
+foyer membre également rattaché à un groupe local n'apparaît pas dans le décompte des
+membres. Ce point est à confirmer avec la coordination.
 
 ---
 
@@ -150,6 +182,15 @@ assumé en l'état.
 
 **Vingt-et-un NPA n'ont aucune donnée de demande** et ne portent donc pas de bulle. La carte
 ne permet pas de distinguer une absence de donnée d'une demande réellement nulle.
+
+**Cent vingt-huit foyers étiquetés déclarent zéro personne** dans l'export du 21 septembre
+2026. Ils comptent pour zéro personne équivalente : les totaux affichés sont donc des
+minorants.
+
+**Les foyers hors du canton sortent de la carte** : 11,5 personnes équivalentes de membres
+et 5,0 de liste d'attente dans l'export du 21 septembre 2026, réparties entre la France
+voisine — Ferney-Voltaire, Prévessin, Annemasse — et d'autres cantons. Le rapport du script
+d'import les chiffre à chaque mise à jour.
 
 **Un point de vente est situé hors du canton**, au NPA 1295 (Mies, Vaud) : La Ferme du Torry
 en vente directe. Son triangle s'affiche mais il n'appartient à aucun polygone de la carte.
